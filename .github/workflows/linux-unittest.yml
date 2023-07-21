@@ -1,0 +1,32 @@
+name: linux-unittest
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        compiler: [g++-latest, clang++-latest]
+
+    steps:
+    - name: Install compiler
+      id: install_cc
+      uses: rlalik/setup-cpp-compiler@master
+      with:
+        compiler: ${{ matrix.compiler }}
+    - uses: actions/checkout@v3
+    - name: configure
+      run: |
+        cmake -DBUILD_TESTS=ON -DCMAKE_EXPORT_COMPILE_COMMANDS:BOOL=TRUE -DCMAKE_BUILD_TYPE:STRING=Debug -B./build -G "Unix Makefiles" \
+          -DCMAKE_C_COMPILER:FILEPATH=${{ steps.install_cc.outputs.cc }} -DCMAKE_CXX_COMPILER:FILEPATH=${{ steps.install_cc.outputs.cxx }}
+    - name: build and run tests
+      run: |
+        cmake --build ./build --config Debug --target troll_util_tests --
+        ./build/troll_util_tests 
