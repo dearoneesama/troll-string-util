@@ -42,7 +42,10 @@ namespace troll {
   }
 
   template<class Arg0, class ...Args>
-  constexpr inline char *snformat_impl(char *dest, size_t destlen, const char *format, const Arg0 &a0, const Args &...args) {
+#if (defined(__GNUC__) && !defined(__clang__))
+  constexpr
+#endif  // if compiler is gcc
+  inline char *snformat_impl(char *dest, size_t destlen, const char *format, const Arg0 &a0, const Args &...args) {
     for (size_t i = destlen - 1; *format && i;) {
       if (*format == '{' && *(format + 1) == '}') {
         size_t real_len = i + 1;
@@ -253,50 +256,55 @@ namespace troll {
 
     // the escape string used to start the style.
     static ::etl::string_view enabler_str() {
-      static char buf[enabler_str_size + 1] = "";
+      if constexpr (!!num_params_) {
+        static char buf[enabler_str_size + 1];
+        static bool initialized = false;
 
-      if (!*buf && num_params_) {
-        char *p = buf;
-        p = strcontcpy(p, "\033[");
-        // font
-        if ((font & ansi_font::bold) == ansi_font::bold)                   p = strcontcpy(p, "1;");
-        if ((font & ansi_font::dim) == ansi_font::dim)                     p = strcontcpy(p, "2;");
-        if ((font & ansi_font::italic) == ansi_font::italic)               p = strcontcpy(p, "3;");
-        if ((font & ansi_font::underline) == ansi_font::underline)         p = strcontcpy(p, "4;");
-        if ((font & ansi_font::blink) == ansi_font::blink)                 p = strcontcpy(p, "5;");
-        if ((font & ansi_font::reverse) == ansi_font::reverse)             p = strcontcpy(p, "7;");
-        if ((font & ansi_font::hidden) == ansi_font::hidden)               p = strcontcpy(p, "8;");
-        if ((font & ansi_font::strikethrough) == ansi_font::strikethrough) p = strcontcpy(p, "9;");
-        // fg color
-        switch (fg_color) {
-          case ansi_color::black:   p = strcontcpy(p, "30;"); break;
-          case ansi_color::red:     p = strcontcpy(p, "31;"); break;
-          case ansi_color::green:   p = strcontcpy(p, "32;"); break;
-          case ansi_color::yellow:  p = strcontcpy(p, "33;"); break;
-          case ansi_color::blue:    p = strcontcpy(p, "34;"); break;
-          case ansi_color::magenta: p = strcontcpy(p, "35;"); break;
-          case ansi_color::cyan:    p = strcontcpy(p, "36;"); break;
-          case ansi_color::white:   p = strcontcpy(p, "37;"); break;
-          default: break;
+        if (!initialized) {
+          char *p = buf;
+          p = strcontcpy(p, "\033[");
+          // font
+          if ((font & ansi_font::bold) == ansi_font::bold)                   p = strcontcpy(p, "1;");
+          if ((font & ansi_font::dim) == ansi_font::dim)                     p = strcontcpy(p, "2;");
+          if ((font & ansi_font::italic) == ansi_font::italic)               p = strcontcpy(p, "3;");
+          if ((font & ansi_font::underline) == ansi_font::underline)         p = strcontcpy(p, "4;");
+          if ((font & ansi_font::blink) == ansi_font::blink)                 p = strcontcpy(p, "5;");
+          if ((font & ansi_font::reverse) == ansi_font::reverse)             p = strcontcpy(p, "7;");
+          if ((font & ansi_font::hidden) == ansi_font::hidden)               p = strcontcpy(p, "8;");
+          if ((font & ansi_font::strikethrough) == ansi_font::strikethrough) p = strcontcpy(p, "9;");
+          // fg color
+          switch (fg_color) {
+            case ansi_color::black:   p = strcontcpy(p, "30;"); break;
+            case ansi_color::red:     p = strcontcpy(p, "31;"); break;
+            case ansi_color::green:   p = strcontcpy(p, "32;"); break;
+            case ansi_color::yellow:  p = strcontcpy(p, "33;"); break;
+            case ansi_color::blue:    p = strcontcpy(p, "34;"); break;
+            case ansi_color::magenta: p = strcontcpy(p, "35;"); break;
+            case ansi_color::cyan:    p = strcontcpy(p, "36;"); break;
+            case ansi_color::white:   p = strcontcpy(p, "37;"); break;
+            default: break;
+          }
+          // bg color
+          switch (bg_color) {
+            case ansi_color::black:   p = strcontcpy(p, "40;"); break;
+            case ansi_color::red:     p = strcontcpy(p, "41;"); break;
+            case ansi_color::green:   p = strcontcpy(p, "42;"); break;
+            case ansi_color::yellow:  p = strcontcpy(p, "43;"); break;
+            case ansi_color::blue:    p = strcontcpy(p, "44;"); break;
+            case ansi_color::magenta: p = strcontcpy(p, "45;"); break;
+            case ansi_color::cyan:    p = strcontcpy(p, "46;"); break;
+            case ansi_color::white:   p = strcontcpy(p, "47;"); break;
+            default: break;
+          }
+          if (*(p - 1) == ';') --p;
+          *p++ = 'm';
+          *p = '\0';
+          initialized = true;
         }
-        // bg color
-        switch (bg_color) {
-          case ansi_color::black:   p = strcontcpy(p, "40;"); break;
-          case ansi_color::red:     p = strcontcpy(p, "41;"); break;
-          case ansi_color::green:   p = strcontcpy(p, "42;"); break;
-          case ansi_color::yellow:  p = strcontcpy(p, "43;"); break;
-          case ansi_color::blue:    p = strcontcpy(p, "44;"); break;
-          case ansi_color::magenta: p = strcontcpy(p, "45;"); break;
-          case ansi_color::cyan:    p = strcontcpy(p, "46;"); break;
-          case ansi_color::white:   p = strcontcpy(p, "47;"); break;
-          default: break;
-        }
-        if (*(p - 1) == ';') --p;
-        if (num_params_) *p++ = 'm';
-        *p = '\0';
+        return {buf, enabler_str_size};
+      } else {
+        return {"", enabler_str_size};
       }
-
-      return {buf, enabler_str_size};
     }
 
     // the size of the escape string used to end the style (excluding \0).
@@ -305,10 +313,11 @@ namespace troll {
 
     // the escape string used to end the style.
     static ::etl::string_view disabler_str() {
-      static char buf[disabler_str_size + 1] = "";
-      if (!*buf && num_params_)
-        strcontcpy(buf, "\033[0m");
-      return {buf, disabler_str_size};
+      if constexpr (!!num_params_) {
+        return {"\033[0m", disabler_str_size};
+      } else {
+        return {"", disabler_str_size};
+      }
     }
 
     // the number of extra characters needed to wrap any string with the style.

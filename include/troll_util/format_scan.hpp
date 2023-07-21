@@ -80,7 +80,7 @@ namespace troll {
         using Decay = std::decay_t<Arg0>;
         // int, uint, ...
         if constexpr (std::is_integral_v<Decay> && !std::is_same_v<Decay, char> && !std::is_same_v<Decay, unsigned char>) {
-          size_t i;
+          size_t i{};
           if (std::is_signed_v<Decay> && test_len && *test == '-') {
             i = 1 + eat_while(test + 1, test_len - 1, is_digit);
           } else {
