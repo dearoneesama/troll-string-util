@@ -1,3 +1,11 @@
+/**
+ * -- troll --
+ * 
+ * Copyright (c) 2023 dearoneesama
+ * 
+ * This software is licensed under MIT License.
+ */
+
 #pragma once
 
 #include <utility>

@@ -1,3 +1,11 @@
+/**
+ * -- troll --
+ * 
+ * Copyright (c) 2023 dearoneesama
+ * 
+ * This software is licensed under MIT License.
+ */
+
 #include <catch2/catch_test_macros.hpp>
 #include <etl/string_view.h>
 
