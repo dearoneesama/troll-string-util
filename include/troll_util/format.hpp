@@ -41,6 +41,13 @@ namespace troll {
   template<class B, class I, unsigned int F, bool R>
   struct is_fpm_fixed<fpm::fixed<B, I, F, R>> : std::true_type {};
 
+  struct unsupported_to_string_type {};
+
+  template<class T>
+  struct to_stringer {
+    unsupported_to_string_type operator()(const T&, ::etl::istring &) const;
+  };
+
   constexpr inline char *snformat_impl(char *dest, size_t destlen, const char *format) {
     for (size_t i = destlen - 1; *format && i--;) {
       *dest++ = *format++;
@@ -85,6 +92,8 @@ namespace troll {
             }
           }
           s.uninitialized_resize(at);
+        } else if constexpr (!std::is_same_v<decltype(to_stringer<Decay>{}(a0, s)), unsupported_to_string_type>) {
+          to_stringer<Decay>{}(a0, s);
         } else {
           ::etl::to_string(a0, s);
         }
@@ -125,13 +134,20 @@ namespace troll {
     return buf;
   }
 
+  template<class ...Args>
+  constexpr inline size_t sformat(::etl::istring &dest, const char *format, const Args &...args) {
+    auto sz = snformat(dest.data(), dest.capacity() + 1, format, args...);
+    dest.uninitialized_resize(sz);
+    return sz;
+  }
+
   enum class padding {
     left,
     middle,
     right,
   };
 
-  constexpr void pad_left(char *__restrict__ dest, size_t dest_pad_len, const char *__restrict__ src, size_t srclen, char padchar) {
+  constexpr inline void pad_left(char *__restrict__ dest, size_t dest_pad_len, const char *__restrict__ src, size_t srclen, char padchar) {
     for (size_t i = 0; i < srclen; ++i) {
       dest[i] = src[i];
     }
@@ -140,7 +156,7 @@ namespace troll {
     }
   }
 
-  constexpr void pad_middle(char *__restrict__ dest, size_t dest_pad_len, const char *__restrict__ src, size_t srclen, char padchar) {
+  constexpr inline void pad_middle(char *__restrict__ dest, size_t dest_pad_len, const char *__restrict__ src, size_t srclen, char padchar) {
     size_t left = (dest_pad_len - srclen) / 2;
     for (size_t i = 0; i < left; ++i) {
       dest[i] = padchar;
@@ -153,7 +169,7 @@ namespace troll {
     }
   }
 
-  constexpr void pad_right(char *__restrict__ dest, size_t dest_pad_len, const char *__restrict__ src, size_t srclen, char padchar) {
+  constexpr inline void pad_right(char *__restrict__ dest, size_t dest_pad_len, const char *__restrict__ src, size_t srclen, char padchar) {
     for (size_t i = 0; i < dest_pad_len - srclen; ++i) {
       dest[i] = padchar;
     }
@@ -169,7 +185,7 @@ namespace troll {
    * 
    * src: note ansi codes (colors) are not supported.
   */
-  constexpr void pad(char *__restrict__ dest, size_t dest_pad_len, const char *__restrict__ src, size_t srclen, padding p, char padchar = ' ') {
+  constexpr inline void pad(char *__restrict__ dest, size_t dest_pad_len, const char *__restrict__ src, size_t srclen, padding p, char padchar = ' ') {
     if (dest_pad_len < srclen) {
       srclen = dest_pad_len;
     }
@@ -190,17 +206,23 @@ namespace troll {
    * src: note ansi codes (colors) are not supported.
   */
   template<size_t DestPadLen, size_t SrcLen>
-  constexpr void pad(char (& __restrict__ dest)[DestPadLen], const char (& __restrict__ src)[SrcLen], padding p, char padchar = ' ') {
+  constexpr inline void pad(char (& __restrict__ dest)[DestPadLen], const char (& __restrict__ src)[SrcLen], padding p, char padchar = ' ') {
     pad(dest, DestPadLen - 1, src, SrcLen - 1, p, padchar);
     dest[DestPadLen - 1] = '\0';
   }
 
   template<size_t DestPadLen>
-  constexpr ::etl::string<DestPadLen> pad(::etl::string_view src, padding p, char padchar = ' ') {
+  constexpr inline ::etl::string<DestPadLen> pad(::etl::string_view src, padding p, char padchar = ' ') {
     ::etl::string<DestPadLen> buf;
     pad(buf.data(), DestPadLen, src.data(), src.size(), p, padchar);
     buf.uninitialized_resize(DestPadLen);
     return buf;
+  }
+
+  inline void pad(::etl::istring &dest, size_t dest_pad_len, ::etl::string_view src, padding p, char padchar = ' ') {
+    size_t padlen = etl::min(dest_pad_len, dest.capacity());
+    pad(dest.data(), padlen, src.data(), src.size(), p, padchar);
+    dest.uninitialized_resize(padlen);
   }
 
   enum class ansi_font: uint8_t {

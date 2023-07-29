@@ -12,14 +12,31 @@
 #include <troll_util/format.hpp>
 #include <troll_util/utils.hpp>
 
+struct test_type {
+  int x;
+  char c;
+};
+
+template<>
+struct troll::to_stringer<test_type> {
+  void operator()(const test_type &d, ::etl::istring &s) const {
+    sformat(s, "td(x={}, c={})", d.x, d.c);
+  }
+};
+
 TEST_CASE("sformat usage", "[format]") {
   char s[50];
   REQUIRE(troll::snformat(s, "abcde{}", 0) == 6);
   REQUIRE(etl::string_view{s} == "abcde0");
   REQUIRE(troll::snformat(s, "abc {} de {} {}{} yolo", 12, -44, 7, "hehe") == 24);
   REQUIRE(etl::string_view{s} == "abc 12 de -44 7hehe yolo");
+
   REQUIRE(troll::sformat<50>("abc {} a {} ", 12, 'b') == "abc 12 a b ");
   REQUIRE(troll::sformat<50>("{} and {} {}", fpm::fixed_16_16{1} / 4 * 3, fpm::fixed_16_16{-13} / 3, fpm::fixed_16_16{}) == "0.75 and -4.33 0.00");
+
+  etl::string<50> is;
+  REQUIRE(troll::sformat(is, "abc {} 16", 12) == 9);
+  REQUIRE(is == "abc 12 16");
 
   SECTION("no overflow") {
     char s[11];
@@ -34,6 +51,16 @@ TEST_CASE("sformat usage", "[format]") {
     REQUIRE(s[10] == 'A');
     REQUIRE(troll::snformat(s, 10, "abc{}de", 12345) == 9);
     REQUIRE(etl::string_view{s} == "abc12345d");
+
+    etl::string<10> is;
+    REQUIRE(troll::sformat(is, "abc{}de", 123456) == 10);
+    REQUIRE(is.size() == 10);
+  }
+
+  SECTION("custom type") {
+    test_type td{90, 'c'};
+    REQUIRE(troll::sformat<50>("hello {} and {}", td, 17) == "hello td(x=90, c=c) and 17");
+    REQUIRE(troll::sformat<50>("{}, {} done", td, td) == "td(x=90, c=c), td(x=90, c=c) done");
   }
 }
 
@@ -82,6 +109,18 @@ TEST_CASE("pad string usage", "pad") {
 
   SECTION("pad right etl") {
     REQUIRE(troll::pad<10>("123456789", troll::padding::right) == " 123456789");
+
+    etl::string<20> is;
+    troll::pad(is, 10, "123456789", troll::padding::right, '-');
+    REQUIRE(is == "-123456789");
+    REQUIRE(is.size() == 10);
+  }
+
+  SECTION("pad left etl insufficient capacity") {
+    etl::string<7> is;
+    troll::pad(is, 10, "19a", troll::padding::left);
+    REQUIRE(is == "19a    ");
+    REQUIRE(is.size() == 7);
   }
 }
 
