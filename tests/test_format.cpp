@@ -12,10 +12,12 @@
 #include <troll_util/format.hpp>
 #include <troll_util/utils.hpp>
 
-struct test_type {
-  int x;
-  char c;
-};
+namespace {
+  struct test_type {
+    int x;
+    char c;
+  };
+}
 
 template<>
 struct troll::to_stringer<test_type> {
