@@ -109,9 +109,10 @@ namespace troll {
   }
 
   /**
-   * formats string into the buffer. returns length of result string excluding \0.
-   * the function does not overflow the buffer.
-   * the dest buffer needs an extra char to hold \0.
+   * Formats the string into the buffer and returns the length of the result string.
+   * This function _will_ output the nul terminator (`\0`), however it is not included in the
+   * return value.
+   * This function does not overflow the buffer.
   */
   template<class ...Args>
   constexpr inline size_t snformat(char *dest, size_t destlen, const char *format, const Args &...args) {
@@ -119,7 +120,8 @@ namespace troll {
   }
 
   /**
-   * similar to the other snformat but the buffer size is automatically deduced.
+   * The overload is for the case where the buffer size can be automatically deduced if the
+   * destination is an array.
   */
   template<size_t N, class ...Args>
   constexpr inline size_t snformat(char (&dest)[N], const char *format, const Args &...args) {
@@ -127,6 +129,11 @@ namespace troll {
     return snformat(dest, N, format, args...);
   }
 
+  /**
+   * Formats the string into a string instance with specified capacity template parameter. Same
+   * as [`::etl::string`](https://www.etlcpp.com/string.html), the N will not include the nul
+   * terminator.
+  */
   template<size_t N, class ...Args>
   constexpr inline ::etl::string<N> sformat(const char *format, const Args &...args) {
     ::etl::string<N> buf;
@@ -135,6 +142,10 @@ namespace troll {
     return buf;
   }
 
+  /**
+   * Formats the string into an existing string instance and returns the result length, which
+   * excludes the nul terminator. The string itself's capacity is used.
+  */
   template<class ...Args>
   constexpr inline size_t sformat(::etl::istring &dest, const char *format, const Args &...args) {
     auto sz = snformat(dest.data(), dest.capacity() + 1, format, args...);
@@ -180,11 +191,11 @@ namespace troll {
   }
 
   /**
-   * pads the string to the specified length. the function writes to every character in the dest
-   * buffer of length dest_pad_len and does not overflow it. this overload does not output the
-   * terminating \0.
+   * Pads the string to the specified length. The function writes to every character in the dest
+   * buffer with the source string and pad characters given the dest_pad_len. However, it does
+   * not output the terminating nul.
    * 
-   * src: note ansi codes (colors) are not supported.
+   * This function operates on the byte level, which means ANSI codes (colors) are not supported.
   */
   constexpr inline void pad(char *__restrict__ dest, size_t dest_pad_len, const char *__restrict__ src, size_t srclen, padding p, char padchar = ' ') {
     if (dest_pad_len < srclen) {
@@ -201,10 +212,9 @@ namespace troll {
   }
 
   /**
-   * pads the string to the specified length. the function writes to every character in the dest
-   * buffer except the last one which is always set to \0.
-   * 
-   * src: note ansi codes (colors) are not supported.
+   * The padding length is deduced from the destination array size. which is DestPadLen - 1. This
+   * overload writes to every character in the dest buffer except the last one, which is always
+   * set to nul.
   */
   template<size_t DestPadLen, size_t SrcLen>
   constexpr inline void pad(char (& __restrict__ dest)[DestPadLen], const char (& __restrict__ src)[SrcLen], padding p, char padchar = ' ') {
@@ -212,6 +222,9 @@ namespace troll {
     dest[DestPadLen - 1] = '\0';
   }
 
+  /**
+   * Pads the source string with DestPadLen characters and returns a new string instance.
+  */
   template<size_t DestPadLen>
   constexpr inline ::etl::string<DestPadLen> pad(::etl::string_view src, padding p, char padchar = ' ') {
     ::etl::string<DestPadLen> buf;
@@ -220,6 +233,10 @@ namespace troll {
     return buf;
   }
 
+  /**
+   * Pads the source string with dest_pad_len characters, or the destination capacity if the
+   * former is larger, into an existing string.
+  */
   inline void pad(::etl::istring &dest, size_t dest_pad_len, ::etl::string_view src, padding p, char padchar = ' ') {
     size_t padlen = etl::min(dest_pad_len, dest.capacity());
     pad(dest.data(), padlen, src.data(), src.size(), p, padchar);
@@ -260,13 +277,15 @@ namespace troll {
   };
 
   /**
-   * a compile-time object that holds ansi style options and does escape string
-   * things.
+   * A compile-time object that holds ANSI style options and handles the work for escape strings.
    */
   template<ansi_font Font = ansi_font::none, ansi_color FgColor = ansi_color::none, ansi_color BgColor = ansi_color::none>
   struct static_ansi_style_options {
+    // The `ansi_front` enum class creates the style of the text.
     static constexpr auto font = Font;
+    // The `ansi_color` enum class creates the style of the foreground.
     static constexpr auto fg_color = FgColor;
+    // The `ansi_color` enum class creates the style of the background.
     static constexpr auto bg_color = BgColor;
 
   private:
@@ -285,7 +304,7 @@ namespace troll {
       + (bg_color == ansi_color::none ? 0 : 2)
       + num_semicolons_) : 0);
 
-    // the escape string used to start the style.
+    // The string of ANSI escape characters used to start the style.
     static ::etl::string_view enabler_str() {
       if constexpr (!!num_params_) {
         static char buf[enabler_str_size + 1];
@@ -342,7 +361,7 @@ namespace troll {
     // we are just using the reset escape string for now.
     static constexpr size_t disabler_str_size = num_params_ ? LEN_LITERAL("\033[0m") : 0;
 
-    // the escape string used to end the style.
+    // The string of ANSI escape characters used to remove styles.
     static ::etl::string_view disabler_str() {
       if constexpr (!!num_params_) {
         return {"\033[0m", disabler_str_size};
@@ -351,36 +370,38 @@ namespace troll {
       }
     }
 
-    // the number of extra characters needed to wrap any string with the style.
+    // The number of extra characters needed to wrap any string with the style.
     static constexpr size_t wrapper_str_size = enabler_str_size + disabler_str_size;
   };
 
   using static_ansi_style_options_none_t = static_ansi_style_options<>;
   static constexpr static_ansi_style_options_none_t static_ansi_style_options_none{};
 
+  // A helper class to pass arguments for title rows to table builder.
   template<class Heading, class TitleIt, class HeadingStyle, class TitleStyle>
   struct tabulate_title_row_args {
     using heading_type = Heading;
     using title_it_type = TitleIt;
     using heading_style_type = HeadingStyle;
     using title_style_type = TitleStyle;
+    // Whether the leftmost (heading) column uses the same style as the columns on the right.
     static constexpr bool style_is_same = std::is_same_v<HeadingStyle, TitleStyle>;
-    // the heading (first column) used for the title row
+    // The leftmost (heading) column used for the title row.
     Heading heading;
-    // title range
+    // Range for titles (names).
     TitleIt begin, end;
 
-    // apply different styles on heading (left) and real titles
+    // Apply different styles on the leftmost column (heading column) and columns on the right.
     template<class Hding, class It1, class It2>
     constexpr tabulate_title_row_args(Hding &&heading, It1 &&begin, It2 &&end, HeadingStyle, TitleStyle)
       : heading{std::forward<Hding>(heading)}, begin{std::forward<It1>(begin)}, end{std::forward<It2>(end)} {}
 
-    // apply the same style on heading (left) and real titles
+    // Apply the same style on the leftmost column (heading column) and columns on the right.
     template<class Hding, class It1, class It2>
     constexpr tabulate_title_row_args(Hding &&heading, It1 &&begin, It2 &&end, TitleStyle)
       : heading{std::forward<Hding>(heading)}, begin{std::forward<It1>(begin)}, end{std::forward<It2>(end)} {}
 
-    // no heading
+    // Provide no heading column.
     template<class It1, class It2>
     constexpr tabulate_title_row_args(It1 &&begin, It2 &&end, TitleStyle)
       : heading{""}, begin{std::forward<It1>(begin)}, end{std::forward<It2>(end)} {}
@@ -395,29 +416,32 @@ namespace troll {
   template<class TitleIt, class TitleStyle>
   tabulate_title_row_args(TitleIt, TitleIt, TitleStyle) -> tabulate_title_row_args<const char *, TitleIt, TitleStyle, TitleStyle>;
 
+  // A helper class to pass arguments for element rows to table builder.
   template<class Heading, class ElemIt, class HeadingStyle, class ElemStyle>
   struct tabulate_elem_row_args {
     using heading_type = Heading;
     using elem_it_type = ElemIt;
     using heading_style_type = HeadingStyle;
     using elem_style_type = ElemStyle;
+    // Whether the leftmost (heading) column uses the same style as the columns on the right.
     static constexpr bool style_is_same = std::is_same_v<HeadingStyle, ElemStyle>;
-    // the heading (first column) used for the element row
+    // The leftmost (heading) column used for the title row.
     Heading heading;
-    // element range
+    // Range start for elements (names). An end is not required because it would be deduced from
+    // the title row.
     ElemIt begin;
 
-    // apply different styles on heading (left) and real elements
+    // Apply different styles on the leftmost column (heading column) and columns on the right.
     template<class Hding, class It>
     constexpr tabulate_elem_row_args(Hding &&heading, It &&begin, HeadingStyle, ElemStyle)
       : heading{std::forward<Hding>(heading)}, begin{std::forward<It>(begin)} {}
 
-    // apply the same style on heading (left) and real elements
+    // Apply the same style on the leftmost column (heading column) and columns on the right.
     template<class Hding, class It>
     constexpr tabulate_elem_row_args(Hding &&heading, It &&begin, ElemStyle)
       : heading{std::forward<Hding>(heading)}, begin{std::forward<It>(begin)} {}
 
-    // no heading
+    // Provide no heading column.
     template<class It>
     constexpr tabulate_elem_row_args(It &&begin, ElemStyle)
       : heading{""}, begin{std::forward<It>(begin)} {}
@@ -433,7 +457,7 @@ namespace troll {
   tabulate_elem_row_args(ElemIt, ElemStyle) -> tabulate_elem_row_args<const char *, ElemIt, ElemStyle, ElemStyle>;
 
   /**
-   * helper class to tabulate text. it outputs text line by line.
+   * Helper class to tabulate text.
    */
   template<size_t ElemsPerRow, size_t HeadingPadding, size_t ContentPadding, class DividerStyle, class TitleRowArgs, class ...ElemRowArgs>
   class tabulate {
@@ -442,18 +466,25 @@ namespace troll {
     using divider_style_type = DividerStyle;
     using title_row_args_type = TitleRowArgs;
     using elem_row_args_type = std::tuple<ElemRowArgs...>;
+    // The number of element rows.
     static constexpr size_type num_elem_row_args = sizeof...(ElemRowArgs);
 
+    // The maximum number of elements per row.
     static constexpr size_type elems_per_row = ElemsPerRow;
+    // The fixed width of the leftmost (heading) column.
     static constexpr size_type heading_padding = HeadingPadding;
+    // The fixed width of the columns on the right (content column).
     static constexpr size_type content_padding = ContentPadding;
-    // calculated based on the number of elements per row and formatting, excluding escapes.
+    // The maximum width of any row in the result.
+    // Calculated based on the number of elements per row and formatting, excluding escapes.
     static constexpr size_type max_line_width = HeadingPadding + ElemsPerRow * ContentPadding + 10/*safety*/;
 
+    // Characters for table dividers.
     char divider_horizontal = '-';
     char divider_vertical = '|';
     char divider_cross = '+';
 
+    // Constructor. To avoid passing excess template parameters, use `make_tabulate` instead.
     template<class Tit, class ...Elems>
     constexpr tabulate(Tit &&title, Elems &&...elems)
       : title_row_args_{std::forward<Tit>(title)}
@@ -549,7 +580,10 @@ namespace troll {
     }
 
   public:
-    // single use iterator
+    /**
+     * Single use iterator for getting the result. In general, an
+     * [`input iterator`](https://en.cppreference.com/w/cpp/named_req/InputIterator).
+    */
     class iterator {
     public:
       using difference_type = size_t;  // never
@@ -693,7 +727,8 @@ namespace troll {
     }
 
     /**
-     * reset this object to use a new range of data.
+     * Provide new ranges of data (title rows and element rows) and replaces the iterators already
+     * in the tabulate object, so that it can be iterated again to print another table.
      */
     template<class Tit1, class Tit2, class ...Elems>
     constexpr void reset_src_iterator(Tit1 &&title_begin, Tit2 &&title_end, Elems &&...elem_begins)
@@ -704,12 +739,12 @@ namespace troll {
     }
 
     /**
-     * returns col, row and a string to be used to patch a printed table assuming
-     * value has changed. use only when a field in the table is supposed to be modified.
-     * if elements are added or deleted from the src iterable, use reset_src_iterator() instead.
+     * Returns the column, row, and a string to be used to patch a already printed table if the
+     * value in it is supposed to change _(only modify)_.
+     * If elements are added or deleted from the source table, use `reset_src_iterator` instead.
      * - ArgRow: ith row as provided to make_tabulate(), eg. 0 -> title row, 1 -> first element row
      * - it_index: index of the value in that element row
-     * - v: value that changed
+     * - v: replacement value (type can be different)
      */
     template<size_t ArgRow, class V>
     constexpr auto patch_str(size_t it_index, const V &v) {
@@ -771,15 +806,16 @@ namespace troll {
   };
 
   /**
-   * make a tabulator.
-   * template arguments:
-   *   - ElemsPerRow: the number of elements in each row
-   *   - HeadingPadding: the padding for the heading
-   *   - ContentPadding: the padding for the content between each column
-   *  arguments:
-   *   - divider_style: troll::static_ansi_style
-   *   - title_row_args: troll::tabulate_title_row_args
-   *   - elem_row_args: troll::tabulate_elem_row_args
+   * Helper function to make a tabulator when leftmost (heading) column have a different width than
+   * the right-hand-side columns.
+   * Template arguments:
+   *   - ElemsPerRow: The maximum number of elements per row.
+   *   - HeadingPadding: The fixed width of the leftmost (heading) column.
+   *   - ContentPadding: The fixed width of the columns on the right (content column).
+   *  Runtime arguments:
+   *   - divider_style: an `static_ansi_style` instance
+   *   - title_row_args: an `tabulate_title_row_args` instance
+   *   - elem_row_args: an `tabulate_elem_row_args` instance
    */
   template<size_t ElemsPerRow, size_t HeadingPadding, size_t ContentPadding, class DividerStyle, class TitleRowArgs, class ...ElemRowArgs>
   constexpr auto make_tabulate(DividerStyle, TitleRowArgs &&title, ElemRowArgs &&...elems) {
@@ -789,14 +825,14 @@ namespace troll {
   }
 
   /**
-   * make a tabulator.
-   * template arguments:
-   *   - ElemsPerRow: the number of elements in each row
-   *   - Padding: padding between columns
-   *  arguments:
-   *   - divider_style: troll::static_ansi_style
-   *   - title_row_args: troll::tabulate_title_row_args
-   *   - elem_row_args: troll::tabulate_elem_row_args
+   * Helper function to make a tabulator when all columns have the same width.
+   * Template arguments:
+   *   - ElemsPerRow: The maximum number of elements per row.
+   *   - Padding: The fixed width of each column.
+   *  Runtime arguments:
+   *   - divider_style: an `static_ansi_style` instance
+   *   - title_row_args: an `tabulate_title_row_args` instance
+   *   - elem_row_args: an `tabulate_elem_row_args` instance
    */
   template<size_t ElemsPerRow, size_t Padding, class DividerStyle, class TitleRowArgs, class ...ElemRowArgs>
   constexpr auto make_tabulate(DividerStyle, TitleRowArgs &&title, ElemRowArgs &&...elems) {
@@ -806,11 +842,11 @@ namespace troll {
   }
 
   /**
-   * the class supports specifying text at a certain line and at a certain column.
-   * it maintains an internal queue for texts, and when on demand, it will output a
+   * The class supports specifying text at a certain line and at a certain column.
+   * It maintains an internal queue for texts, and when on demand, it will output a
    * string with ansi escape codes which can be used in writing to a terminal.
    * 
-   * the usage of this class means that it takes entire control of the terminal ui,
+   * The usage of this class means that it takes entire control of the terminal ui,
    * mostly if not all.
    */
   template<size_t MaxLineWidth, size_t MaxLines, size_t MaxQueueSize = MaxLines>
@@ -820,24 +856,28 @@ namespace troll {
     static_assert(MaxQueueSize);
   public:
     using size_type = size_t;
+    // The maximum number of characters per line.
     static constexpr size_type max_line_width = MaxLineWidth;
+    // The number of lines displayable on the terminal.
     static constexpr size_type max_lines = MaxLines;
+    // The maximum number of lines queueable for output.
     static constexpr size_type max_queue_size = MaxQueueSize;
 
+    // Constructor.
     constexpr OutputControl() {
       snformat(move_cursor_to_bottom_, "\033[{};1H", max_lines + 1);
     }
 
     /**
-     * submit a text to be outputted at a certain line and column. returns the number of
+     * Submit a text to be outputted at a certain line and column. returns the number of
      * characters that were successfully enqueued.
      * 
      * - line: 0-based
      * - column: 0-based
-     * - text: do not include ansi escape codes other than color etc. but notice that colors
+     * - text: do not include ansi escape codes other than color etc. But notice that colors
      *         occupy character buffers.
-     *         text is null-terminated. if it is a nullptr, then it corresponds to clearing
-     *         the line. the call will return 0.
+     *         Text is null-terminated. If it is a nullptr, then it corresponds to clearing
+     *         the line. The call will return 0.
      */
     size_type enqueue(size_type line, size_type column, const char *text) {
       if (queue_.full()) {
@@ -852,8 +892,9 @@ namespace troll {
     }
 
   /**
-   * get a string ready to be outputted to a terminal, or nullptr if there is none.
-   * the string returned is a reference to an internal buffer, and it will be invalid
+   * Get a string ready to be outputted to a terminal (contains the original string wrapped with
+   * ANSI escape characters to move the cursor), or nullptr if there is none.
+   * The string returned is a reference to an internal buffer, and it will be invalid
    * after the next call to this function.
    */
   ::etl::string_view dequeue() {
