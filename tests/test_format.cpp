@@ -26,6 +26,13 @@ struct troll::to_stringer<test_type> {
   }
 };
 
+template<>
+struct troll::to_stringer<long *> {
+  void operator()(const long *, ::etl::istring &s) const {
+    sformat(s, "long array");
+  }
+};
+
 TEST_CASE("sformat usage", "[format]") {
   char s[50];
   REQUIRE(troll::snformat(s, "abcde{}", 0) == 6);
@@ -63,6 +70,11 @@ TEST_CASE("sformat usage", "[format]") {
     test_type td{90, 'c'};
     REQUIRE(troll::sformat<50>("hello {} and {}", td, 17) == "hello td(x=90, c=c) and 17");
     REQUIRE(troll::sformat<50>("{}, {} done", td, td) == "td(x=90, c=c), td(x=90, c=c) done");
+
+    long arrl[2];
+    int arri[2];
+    REQUIRE(troll::sformat<50>("p {}", arrl) == "p long array");
+    REQUIRE(troll::sformat<50>("p {}", arri) != "p long array");
   }
 }
 

@@ -43,7 +43,8 @@ namespace troll {
 
   template<class T>
   struct from_stringer {
-    unsupported_from_string_type operator()(::etl::string_view, T &) const;
+    using TT = std::conditional_t<std::is_pointer_v<T>, T, T &>;
+    unsupported_from_string_type operator()(::etl::string_view, TT) const;
   };
 
   struct sscan_impl_ret {
@@ -97,8 +98,16 @@ namespace troll {
 
       if (*format == '{' && format[1] == '}') {
         using Decay = std::decay_t<Arg0>;
-        // int, uint, ...
-        if constexpr (std::is_integral_v<Decay> && !std::is_same_v<Decay, char> && !std::is_same_v<Decay, unsigned char>) {
+        constexpr bool custom = !std::is_same_v<decltype(from_stringer<Decay>{}(std::declval<::etl::string_view>(), arg0)), unsupported_from_string_type>;
+        if constexpr (custom) {
+          // custom type
+          if (size_t i = from_stringer<Decay>{}(::etl::string_view(test, test_len), arg0)) {
+            return sscan_impl<Prefix>(test + i, test_len - i, format + 2, args...);
+          } else {
+            return {false};
+          }
+        } else if constexpr (std::is_integral_v<Decay> && !std::is_same_v<Decay, char> && !std::is_same_v<Decay, unsigned char>) {
+          // int, uint, ...
           size_t i{};
           if (std::is_signed_v<Decay> && test_len && *test == '-') {
             i = 1 + eat_while(test + 1, test_len - 1, is_digit);
@@ -162,12 +171,7 @@ namespace troll {
             return {false};
           }
         } else {
-          // custom type
-          if (size_t i = from_stringer<Decay>{}(::etl::string_view(test, test_len), arg0)) {
-            return sscan_impl<Prefix>(test + i, test_len - i, format + 2, args...);
-          } else {
-            return {false};
-          }
+          static_assert(custom, "unsupported type");
         }
       }
       if (*format++ != *test++) {

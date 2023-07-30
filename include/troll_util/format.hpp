@@ -45,7 +45,8 @@ namespace troll {
 
   template<class T>
   struct to_stringer {
-    unsupported_to_string_type operator()(const T&, ::etl::istring &) const;
+    using TT = std::conditional_t<std::is_pointer_v<T>, const std::remove_pointer_t<T> * const, const T &>;
+    unsupported_to_string_type operator()(TT, ::etl::istring &) const;
   };
 
   constexpr inline char *snformat_impl(char *dest, size_t destlen, const char *format) {
@@ -66,7 +67,9 @@ namespace troll {
         size_t real_len = i + 1;
         ::etl::string_ext s{dest, real_len};
         using Decay = std::decay_t<Arg0>;
-        if constexpr (std::is_pointer_v<Decay> && std::is_same_v<std::remove_const_t<std::remove_pointer_t<Decay>>, char>) {
+        if constexpr (!std::is_same_v<decltype(to_stringer<Decay>{}(a0, s)), unsupported_to_string_type>) {
+          to_stringer<Decay>{}(a0, s);
+        } else if constexpr (std::is_pointer_v<Decay> && std::is_same_v<std::remove_const_t<std::remove_pointer_t<Decay>>, char>) {
           // const char * <- to_string will print numbers instead
           s.assign(a0);
         } else if constexpr (std::is_same_v<Decay, char>) {
@@ -92,8 +95,6 @@ namespace troll {
             }
           }
           s.uninitialized_resize(at);
-        } else if constexpr (!std::is_same_v<decltype(to_stringer<Decay>{}(a0, s)), unsupported_to_string_type>) {
-          to_stringer<Decay>{}(a0, s);
         } else {
           ::etl::to_string(a0, s);
         }
