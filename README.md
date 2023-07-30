@@ -17,9 +17,9 @@ Drop the header files or templates you like into your project, or include as you
 
 Please see following pages for the documentation:
 
-* [`format`](./docs/format.md)
-* [`format_scan`](./docs/format_scan.md)
-* [`utils`](./docs/utils.md)
+* [`format`](https://dearoneesama.github.io/troll-string-util/docs/format.html)
+* [`format_scan`](https://dearoneesama.github.io/troll-string-util/docs/format_scan.html)
+* [`utils`](https://dearoneesama.github.io/troll-string-util/docs/utils.html)
 
 ## Testing
 The CMake files exist primarily for running the test suites. Here are example commands to run them from the command line:

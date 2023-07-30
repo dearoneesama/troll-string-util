@@ -1,5 +1,8 @@
 plugins:
   - jekyll-relative-links
+  - jekyll-remote-theme
+remote_theme: pages-themes/midnight@v0.2.0
+show_downloads: false
 relative_links:
   enabled: true
   collections: true
