@@ -1,0 +1,14 @@
+---
+---
+
+$header-heading-color: #fff;
+$header-bg-color: rgb(11, 2, 13);
+$header-bg-color-secondary: rgb(223, 134, 236);
+
+@import "{{ site.theme }}";
+
+.main-content {
+  @include large {
+    max-width: 74rem;
+  }
+}
