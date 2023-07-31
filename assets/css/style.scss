@@ -46,4 +46,14 @@ $hr-border-color: #eff0f1;
     color: unset;
     background: unset;
   }
+
+  // group adjacent h3s
+  p + h3 {
+    margin-bottom: 0;
+  }
+
+  h3 + h3 {
+    margin-top: 0;
+    margin-bottom: 0;
+  }
 }
