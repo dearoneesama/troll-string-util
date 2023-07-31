@@ -13,14 +13,19 @@
 
 namespace troll {
   /**
-   * iterator to transform a range.
+   * Iterator to transform a range.
    */
   template<class InputIt, class Fn>
   class it_transform {
   public:
+    // Constructor.
     constexpr it_transform(InputIt begin, InputIt end, Fn fn) noexcept
       : begin_(begin), end_(end), fn_(std::move(fn)) {}
 
+    /**
+     * In general, an
+     * [`input iterator`](https://en.cppreference.com/w/cpp/named_req/InputIterator).
+    */
     class iterator {
     public:
       using difference_type = size_t;  // never
@@ -60,6 +65,10 @@ namespace troll {
       return iterator(this, end_);
     }
 
+    /**
+     * Provide a new range of iterator so it can be iterated again with the same transformer
+     * function.
+    */
     constexpr void reset_src_iterator(InputIt begin, InputIt end) noexcept {
       begin_ = begin;
       end_ = end;

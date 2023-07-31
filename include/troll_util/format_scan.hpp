@@ -193,10 +193,10 @@ namespace troll {
   }
 
   /**
-   * checks the input string (test) compares the same as the format string, and writes down matched
-   * values ({}) to provided variable references.
+   * Checks the input string (test) compares the same as the format string, and writes down
+   * matched values to variable references.
    * 
-   * returns true if the input string matches the format string, false otherwise.
+   * Returns true if the input string matches the format string, false otherwise.
    */
   template<class ...Args>
   constexpr inline bool sscan(const char *test, size_t test_len, const char *format, Args &...args) noexcept {
@@ -209,17 +209,20 @@ namespace troll {
     return sscan(test, N - 1, format, args...);
   }*/
 
+  /**
+   * Overload for the case where the size can be obtained automatically.
+  */
   template<class ...Args>
   constexpr inline bool sscan(::etl::string_view test, const char *format, Args &...args) noexcept {
     return sscan(test.data(), test.size(), format, args...);
   }
 
   /**
-   * checks the format string is a prefix of the input string (test), and writes down matched
-   * values ({}) to provided variable references.
+   * Checks the format string is a prefix of the input string (test), and writes down matched
+   * values to variable references.
    * 
-   * returns truthy value if the input string is started by the format string, 0 otherwise.
-   * the value is the number of consumed characters.
+   * Returns a truthy value if the test strings matches and 0 otherwise. The value is the number
+   * of consumed characters.
    */
   template<class ...Args>
   constexpr inline size_t sscan_prefix(const char *test, size_t test_len, const char *format, Args &...args) noexcept {
@@ -227,6 +230,9 @@ namespace troll {
     return result.success ? test_len - result.test_remain : 0;
   }
 
+  /**
+   * Overload for the case where the size can be obtained automatically.
+  */
   template<class ...Args>
   constexpr inline size_t sscan_prefix(::etl::string_view test, const char *format, Args &...args) noexcept {
     return sscan_prefix(test.data(), test.size(), format, args...);
