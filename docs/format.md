@@ -508,7 +508,7 @@ The position is relative to the beginning of the drawn table. All needed is to w
 
 <hr />
 
-## `<size_t MaxLineWidth, size_t MaxLines, size_t MaxQueueSize = MaxLines> class OutputControl`
+## `<size_t MaxLineWidth, size_t MaxLines, size_t MaxQueueSize = MaxLines> class output_control`
 
 The class supports specifying text at a certain line and at a certain column.
 
@@ -528,7 +528,7 @@ The number of lines displayable on the terminal.
 
 The maximum number of lines queueable for output.
 
-### `OutputControl()`
+### `output_control()`
 
 Constructor.
 
@@ -554,7 +554,7 @@ Instance of this class is almost a "virtual screen" if every text writes go thro
 
 ```cpp
 // max line buffer size and max number lines
-OutputControl<100, 30> oc;
+output_control<100, 30> oc;
 
 // submit requests
 oc.enqueue(0, 0, "write here");

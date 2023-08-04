@@ -826,7 +826,7 @@ namespace troll {
    * mostly if not all.
    */
   template<size_t MaxLineWidth, size_t MaxLines, size_t MaxQueueSize = MaxLines>
-  class OutputControl {
+  class output_control {
     static_assert(MaxLineWidth);
     static_assert(MaxLines);
     static_assert(MaxQueueSize);
@@ -840,7 +840,7 @@ namespace troll {
     static constexpr size_type max_queue_size = MaxQueueSize;
 
     // Constructor.
-    constexpr OutputControl() {
+    constexpr output_control() {
       snformat(move_cursor_to_bottom_, "\033[{};1H", max_lines + 1);
     }
 
@@ -881,7 +881,7 @@ namespace troll {
     const char *content = *ref.text ? ref.text : "\033[K";
     // output ansi code to relocate the cursor, and write text
     auto sz = snformat(current_text_, "\033[{};{}H{}", ref.line + 1, ref.column + 1, content);
-    // at the end, locate the cursor to the bottom. if user wants to dodge the OutputControl
+    // at the end, locate the cursor to the bottom. if user wants to dodge the output_control
     // and prints text directly, this will make sure it would behave as expected.
     sz += snformat(current_text_ + sz, sizeof current_text_ - sz, move_cursor_to_bottom_);
     queue_.pop();

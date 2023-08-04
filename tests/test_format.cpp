@@ -397,8 +397,8 @@ R"(+----------------------------------------------------------------------------
   }
 }
 
-TEST_CASE("output control usage", "[OutputControl]") {
-  troll::OutputControl<20, 5> oc;
+TEST_CASE("output control usage", "[output_control]") {
+  troll::output_control<20, 5> oc;
   REQUIRE(oc.enqueue(0, 5, "content") == 7);
   REQUIRE(oc.enqueue(14, 4, "abc edd uyi") == 11);
   auto res = oc.dequeue();
