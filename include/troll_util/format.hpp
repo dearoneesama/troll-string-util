@@ -11,7 +11,6 @@
 #include <etl/to_string.h>
 #include <etl/queue.h>
 #include <etl/optional.h>
-#include <fpm/fixed.hpp>
 
 // screen-printing utilities
 #define LEN_LITERAL(x) (sizeof(x) / sizeof(x[0]) - 1)
@@ -34,12 +33,6 @@ namespace troll {
 
   template<size_t N>
   struct is_etl_string<::etl::string<N>> : std::true_type {};
-
-  template<class T>
-  struct is_fpm_fixed : std::false_type {};
-
-  template<class B, class I, unsigned int F, bool R>
-  struct is_fpm_fixed<fpm::fixed<B, I, F, R>> : std::true_type {};
 
   struct unsupported_to_string_type {};
 
@@ -78,23 +71,6 @@ namespace troll {
         } else if constexpr (is_etl_string<Decay>::value) {
           // etl::to_string does not support etl::string arg
           s.assign(a0);
-        } else if constexpr (is_fpm_fixed<Decay>::value) {
-          auto int_part = static_cast<int>(a0);
-          auto first_frac = __builtin_abs(static_cast<int>(a0 * 10)) % 10;
-          auto second_frac = __builtin_abs(static_cast<int>(a0 * 100)) % 10;
-          ::etl::to_string(int_part, s);
-          auto at = s.length();
-          // TODO: make better
-          if (at < real_len) {
-            s[at++] = '.';
-            if (at < real_len) {
-              s[at++] = '0' + first_frac;
-              if (at < real_len) {
-                s[at++] = '0' + second_frac;
-              }
-            }
-          }
-          s.uninitialized_resize(at);
         } else {
           ::etl::to_string(a0, s);
         }

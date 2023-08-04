@@ -30,15 +30,9 @@ if (TROLL_FETCH_DEPS)
     GIT_REPOSITORY https://github.com/catchorg/Catch2.git
     GIT_TAG        v3.4.0
   )
-  FetchContent_Declare(
-    fpm
-    GIT_REPOSITORY https://github.com/MikeLankamp/fpm.git
-    GIT_TAG        19ad7a3336e2ec0d7faa9da5232398873b555cfb
-  )
 
   FetchContent_MakeAvailable(etl)
   FetchContent_MakeAvailable(Catch2)
-  FetchContent_MakeAvailable(fpm)
 endif()
 
 configure_file(${CMAKE_SOURCE_DIR}/CTestCustom.cmake ${CMAKE_BINARY_DIR} @ONLY)
@@ -56,7 +50,6 @@ if (BUILD_TESTS)
   target_include_directories(troll_util_tests PRIVATE include)
   target_link_libraries(troll_util_tests PRIVATE Catch2::Catch2WithMain)
   target_link_libraries(troll_util_tests PRIVATE etl::etl)
-  target_link_libraries(troll_util_tests PRIVATE fpm)
 
   add_custom_target(test_verbose COMMAND ${CMAKE_CTEST_COMMAND} --verbose)
 endif()

@@ -3,7 +3,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)](https://github.com/dearoneesama/troll-string-util/blob/main/LICENSE)
 [![GitHub](https://img.shields.io/badge/GitHub-8A2BE2?style=for-the-badge&logo=github)](https://github.com/dearoneesama/troll-string-util)
 
-This project contains string formatting utilities for embedded applications which use fixed-size strings and where exceptions, run-time type info (RTTI) and dynamic memory allocations are unavailable. It relies on and complements the libraries [etl](https://github.com/ETLCPP/etl) and [fpm](https://github.com/MikeLankamp/fpm). It requires C++17 at minimum.
+This project contains string formatting utilities for embedded applications which use fixed-size strings and where exceptions, run-time type info (RTTI) and dynamic memory allocations are unavailable. It relies on and complements the library [etl](https://github.com/ETLCPP/etl). It requires C++17 at minimum.
 
 Some useful functionalities for displaying that `troll` provides include:
 * Substituting values into string's placeholders (format string)

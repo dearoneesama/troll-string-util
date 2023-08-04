@@ -73,6 +73,45 @@ puts(s.c_str());
 // (x=16, y=1) + (x=-10, y=0) = (x=6, y=1)
 ```
 
+Except for custom types, they can serve as a bridge from third-party libraries to your application where printing is needed. For instance, the following implementations can be used for [fpm](https://github.com/MikeLankamp/fpm):
+
+```cpp
+#include <fpm/fixed.hpp>
+
+template<class T>
+struct point {
+  T x, y;
+};
+template<class T> point(T, T) -> point<T>;
+
+namespace troll {
+  template<class T>
+  struct to_stringer<point<T>> {
+    void operator()(const point<T> &p, ::etl::istring &s) const {
+      sformat(s, "(x={}, y={})", p.x, p.y);
+    }
+  };
+
+  template<class B, class I, auto F, auto R>
+  struct to_stringer<fpm::fixed<B, I, F, R>> {
+    void operator()(const fpm::fixed<B, I, F, R> f, ::etl::istring &s) const {
+      auto int_part = static_cast<int>(f);
+      auto first_frac = __builtin_abs(static_cast<int>(f * 10)) % 10;
+      auto second_frac = __builtin_abs(static_cast<int>(f * 100)) % 10;
+      sformat(s, "{}.{}{}", int_part, first_frac, second_frac);
+    }
+  };
+}
+
+using fp = fpm::fixed_16_16;
+point pt{fp{1}, fp{17} / 15};
+auto s = sformat<50>("Coordinate is {}!", pt);
+puts(s.c_str());
+// Coordinate is (x=1.00, y=1.13)!
+```
+
+This example shows the usage where formatting calls may be nested and we can define two specializations independently.
+
 <hr />
 
 ### `void pad(char *dest, size_t dest_pad_len, const char *src, size_t srclen, padding p, char padchar = ' ')`
