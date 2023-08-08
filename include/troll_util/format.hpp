@@ -214,7 +214,7 @@ namespace troll {
    * former is larger, into an existing string.
   */
   inline void pad(::etl::istring &dest, size_t dest_pad_len, ::etl::string_view src, padding p, char padchar = ' ') {
-    size_t padlen = etl::min(dest_pad_len, dest.capacity());
+    size_t padlen = ::etl::min(dest_pad_len, dest.capacity());
     pad(dest.data(), padlen, src.data(), src.size(), p, padchar);
     dest.uninitialized_resize(padlen);
   }
